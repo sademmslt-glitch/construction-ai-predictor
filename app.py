@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 
-# Load models
+# ✅ Load trained models
 reg_model = joblib.load("regression_model.pkl")
 clf_model = joblib.load("classification_model.pkl")
 
@@ -15,10 +15,10 @@ This web app predicts:
 - Final Project Cost (SAR)
 - Probability of Delay (%)
 
-Based on real planning parameters and realistic simulated company data.
+Based on realistic simulated company data.
 """)
 
-# ---- User Inputs ----
+# -------- User Inputs --------
 
 project_type = st.selectbox(
     "Project Type",
@@ -37,47 +37,33 @@ workers = st.number_input("Number of Workers", min_value=1, max_value=200, value
 budget = st.number_input("Estimated Budget (SAR)", min_value=50000, max_value=4000000, value=300000)
 duration = st.number_input("Expected Duration (months)", min_value=1, max_value=36, value=8)
 
-# ---- Feature Engineering ----
+# -------- Feature Engineering --------
 cost_pressure = budget / project_size
 worker_density = workers / project_size
 
-# ---- Encoding project type ----
-project_types = [
-    "Residential Building",
-    "Non-Residential Building",
-    "Electrical Works",
-    "Network & Communication",
-    "Finishing & Tiling",
-    "Renovation"
-]
+# -------- Build input row as dict --------
+input_dict = {
+    "Project_Size": project_size,
+    "Num_Workers": workers,
+    "Budget": budget,
+    "Duration": duration,
+    "Cost_Pressure": cost_pressure,
+    "Worker_Density": worker_density,
+    "Project_Type_Residential Building": 1 if project_type == "Residential Building" else 0,
+    "Project_Type_Non-Residential Building": 1 if project_type == "Non-Residential Building" else 0,
+    "Project_Type_Electrical Works": 1 if project_type == "Electrical Works" else 0,
+    "Project_Type_Network & Communication": 1 if project_type == "Network & Communication" else 0,
+    "Project_Type_Finishing & Tiling": 1 if project_type == "Finishing & Tiling" else 0,
+    "Project_Type_Renovation": 1 if project_type == "Renovation" else 0,
+}
 
-encoded_project = [1 if project_type == p else 0 for p in project_types]
+# -------- Convert to DataFrame --------
+input_data = pd.DataFrame([input_dict])
 
-# ---- Input DataFrame ----
-input_data = pd.DataFrame([[
-    project_size,
-    workers,
-    budget,
-    duration,
-    cost_pressure,
-    worker_density,
-    *encoded_project
-]], columns=[
-    "Project_Size",
-    "Num_Workers",
-    "Budget",
-    "Duration",
-    "Cost_Pressure",
-    "Worker_Density",
-    "Project_Type_Residential Building",
-    "Project_Type_Non-Residential Building",
-    "Project_Type_Electrical Works",
-    "Project_Type_Network & Communication",
-    "Project_Type_Finishing & Tiling",
-    "Project_Type_Renovation"
-])
+# ✅ ✅ ✅ CRITICAL FIX: match training feature order exactly
+input_data = input_data.reindex(columns=reg_model.feature_names_in_, fill_value=0)
 
-# ---- Prediction ----
+# -------- Prediction --------
 if st.button("Predict Project Outcome"):
     predicted_cost = reg_model.predict(input_data)[0]
     delay_probability = clf_model.predict_proba(input_data)[0][1] * 100
@@ -87,7 +73,7 @@ if st.button("Predict Project Outcome"):
     st.metric("Delay Probability (%)", f"{delay_probability:.1f}%")
 
     if delay_probability > 60:
-        st.warning("⚠️ High risk of project delay. Consider increasing workforce or adjusting schedule.")
+        st.warning("⚠️ High risk of project delay. Consider adjusting workforce or schedule.")
     elif delay_probability > 40:
         st.info("ℹ️ Medium delay risk. Monitor project resources carefully.")
     else:
