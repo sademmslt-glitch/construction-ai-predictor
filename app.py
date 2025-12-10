@@ -57,16 +57,21 @@ input_dict = {
     "Project_Type_Renovation": 1 if project_type == "Renovation" else 0,
 }
 
-# -------- Convert to DataFrame --------
 input_data = pd.DataFrame([input_dict])
 
-# ✅ ✅ ✅ CRITICAL FIX: match training feature order exactly
-input_data = input_data.reindex(columns=reg_model.feature_names_in_, fill_value=0)
+# ✅ ✅ ✅ Align features for EACH model separately
+input_data_reg = input_data.reindex(
+    columns=reg_model.feature_names_in_, fill_value=0
+)
+
+input_data_clf = input_data.reindex(
+    columns=clf_model.feature_names_in_, fill_value=0
+)
 
 # -------- Prediction --------
 if st.button("Predict Project Outcome"):
-    predicted_cost = reg_model.predict(input_data)[0]
-    delay_probability = clf_model.predict_proba(input_data)[0][1] * 100
+    predicted_cost = reg_model.predict(input_data_reg)[0]
+    delay_probability = clf_model.predict_proba(input_data_clf)[0][1] * 100
 
     st.subheader("🔍 Prediction Results")
     st.metric("Predicted Final Cost (SAR)", f"{predicted_cost:,.0f}")
