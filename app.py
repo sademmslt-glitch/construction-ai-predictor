@@ -16,6 +16,7 @@ This web app predicts:
 - Probability of Delay (%)
 
 Based on realistic simulated company data.
+It also provides smart recommendations to help decision-making.
 """)
 
 # -------- User Inputs --------
@@ -59,7 +60,7 @@ input_dict = {
 
 input_data = pd.DataFrame([input_dict])
 
-# ✅ ✅ ✅ Align features for EACH model separately
+# ✅ Align features for EACH model separately
 input_data_reg = input_data.reindex(
     columns=reg_model.feature_names_in_, fill_value=0
 )
@@ -77,9 +78,32 @@ if st.button("Predict Project Outcome"):
     st.metric("Predicted Final Cost (SAR)", f"{predicted_cost:,.0f}")
     st.metric("Delay Probability (%)", f"{delay_probability:.1f}%")
 
+    # -------- Risk Level --------
     if delay_probability > 60:
-        st.warning("⚠️ High risk of project delay. Consider adjusting workforce or schedule.")
+        st.warning("🔴 High Delay Risk")
     elif delay_probability > 40:
-        st.info("ℹ️ Medium delay risk. Monitor project resources carefully.")
+        st.info("🟡 Medium Delay Risk")
     else:
-        st.success("✅ Low delay risk. Project plan looks stable.")
+        st.success("🟢 Low Delay Risk")
+
+    # -------- Smart Recommendations --------
+    st.subheader("🛠️ Smart Recommendations")
+
+    if delay_probability > 60:
+        st.write("🔴 **High Risk Project**")
+        st.write("- Increase number of workers.")
+        st.write("- Add contingency budget (5–10%).")
+        st.write("- Review project schedule carefully.")
+        st.write("- Strengthen supervision and follow-up.")
+    
+    elif delay_probability > 40:
+        st.write("🟡 **Medium Risk Project**")
+        st.write("- Slightly increase workforce if possible.")
+        st.write("- Monitor material delivery and expenses closely.")
+        st.write("- Prepare a small contingency budget.")
+    
+    else:
+        st.write("🟢 **Low Risk Project**")
+        st.write("- Current plan is stable.")
+        st.write("- Maintain the same resources and schedule.")
+        st.write("- Continue regular monitoring.")
